@@ -3,7 +3,7 @@ CFLAGS = -g -Wall
 
 all:$(TARGET)
 
-dbt:dbt.c
+dbt:dbt.c intermediate.h
 	gcc $(CFLAGS) -o $@ $<
 
 genop:genop.c
