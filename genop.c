@@ -27,6 +27,12 @@ int main()
 	do {
 		fscanf(in, "%s\n", buf);
 		fprintf(out, "#define %s %d\n", buf, count++);
+		if (count > 255) {
+			fclose(in);
+			fclose(out);
+			printf("Number of OP must less than 255!\n");
+			exit(EXIT_FAILURE);
+		}
 	} while (!feof(in));
 
 	fprintf(out, "#endif\n");
