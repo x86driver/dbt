@@ -95,7 +95,10 @@ void translate()
 
 void init_cpu()
 {
-	cpu = malloc(sizeof(struct cpu_state));
+//	cpu = malloc(sizeof(struct cpu_state));
+	struct cpu_state *ptr = cpu;
+	posix_memalign((void**)&ptr, 64, sizeof(struct cpu_state));
+	cpu = ptr;
 	memset(cpu, 0, sizeof(struct cpu_state));
 
 	cpu->ir = &cpu->irbuf[0];
