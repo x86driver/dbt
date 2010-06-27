@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/mman.h>
+#include <errno.h>
 #include "intermediate.h"
 
 struct cpu_regs {
@@ -73,6 +74,11 @@ void dbt_add_reg_reg(uint32_t opdst, uint32_t op1, uint32_t op2)
 	*cpu->codegen++ = OFFSET(opdst);
 }
 
+void dbt_mov_reg_imm32(uint32_t opdst, uint32_t op1, uint32_t imm32)
+{
+	
+}
+
 void translate()
 {
 	uint32_t opdst, op1, op2;
@@ -97,7 +103,7 @@ void init_cpu()
 {
 //	cpu = malloc(sizeof(struct cpu_state));
 	struct cpu_state *ptr = cpu;
-	posix_memalign((void**)&ptr, 64, sizeof(struct cpu_state));
+	posix_memalign((void**)&ptr, 4096, sizeof(struct cpu_state));
 	cpu = ptr;
 	memset(cpu, 0, sizeof(struct cpu_state));
 
@@ -123,8 +129,10 @@ int main()
 	cpu->regs.r[2] = 7;
 	cpu->regs.r[3] = 15;
 
-	ret = mprotect(cpu->codebuf, 512, PROT_READ|PROT_WRITE|PROT_EXEC);
+	printf("cpu: %p\n", cpu);
+	ret = mprotect(cpu, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC);
 	if (ret != 0) {
+		printf("ret: %d\n", ret);
 		perror("mprotect");
 		exit(1);
 	}
