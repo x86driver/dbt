@@ -99,6 +99,41 @@ void translate()
 	}
 }
 
+#define EAX 0x0b8
+#define ECX 0x0b9
+#define EDX 0x0ba
+#define EBX 0x0bb
+#define ESP 0x0bc
+#define EBP 0x0bd
+#define ESI 0x0be
+#define EDI 0x0bf
+#define R8  0x0b8
+#define R9  0x0b9
+#define R10 0x0ba
+#define R11 0x0bb
+#define R12 0x0bc
+#define R13 0x0bd
+#define R14 0x0be
+#define R15 0x0bf
+
+#define REGNUM 16
+
+uint32_t alloc_reg()
+{
+	static unsigned int regmap = 0;
+	uint32_t regtbl[REGNUM] = {EAX, ECX, EDX, ESI, EDI, R8, R9, R10,
+			R11, EBX, EBP, ESP, R12, R13, R14, R15};
+
+	for (i = 0; i < REGNUM; ++i) {
+		y
+
+	}
+}
+
+void free_reg()
+{
+}
+
 void init_cpu()
 {
 //	cpu = malloc(sizeof(struct cpu_state));
