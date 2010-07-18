@@ -2,6 +2,9 @@
  * TODO:
  * 	1. 要有 host <-> target register 對照
  *	2. 查詢的方向應該是傳入 target register, 查出 host register
+ * NOTE:
+ *	1. 似乎應該假設分配順序都是從頭開始 不會從中間跳著分配
+ *	   否則 alloc_host 會出錯
  */
 
 #include <stdio.h>
@@ -20,8 +23,7 @@
 #define NUM_REG 4
 #define NUM_HOST_REG 4
 
-unsigned int regmap[NUM_REG] = {0};	// 紀錄 Rn 是否已經分配了
-unsigned int reglut[NUM_REG] = {0};	// 紀錄 Rn 對照到 target register 是哪一個
+unsigned int regmap[NUM_REG] = {0};	// 紀錄 Rn 是否已經分配了, 0 代表未分配 =\= 0 代表分配到的 host register
 unsigned int reghost[NUM_HOST_REG] = {0};	// 紀錄 host register 是否被分配了, 只要不是 0 就代表紀錄了 target register
 						// 這裡的順序是按照 priority, 由 regprio 可知順序
 unsigned int regprio[NUM_HOST_REG] = {EAX, ECX, EDX, EBX};
@@ -46,30 +48,48 @@ static inline void reg_to_env(struct TB *tb, int regn)
 }
 
 // ret: 1 代表之前分配過了
-int test_and_set(int regn)
+static inline int test_and_set(int regn)
 {
 	int ret = regmap[regn];
 	regmap[regn] = 1;
 	return ret;
 }
 
-void alloc_host()
+// 跟 test_and_set() 很像 只是不做 set, 用來 debug 用 (也就是可用來查表)
+static inline int test_no_set(int regn)
 {
-	int i;
-	for (i = 0; i < NUM_HOST_REG; ++i) {
-		if (reghost[i] != 0) {	// 找到空的 host reg 可以分配
-			reghost[i] = regprio[i];	// 絕妙的分配方法 要細想
-		}
-	}
+	return regmap[regn];
 }
 
-void reg_alloc(int target_reg)
+// 傳回值是分配到的 host register
+static inline int alloc_host(int target_reg)
 {
-	if (test_and_set(target_reg) == 1) {
-	} else {
+	int i;
+	for (i = target_reg; i < NUM_HOST_REG; ++i) {
+		if (reghost[i] == 0) {	// 找到空的 host reg 可以分配
+			reghost[i] = regprio[i];	// 絕妙的分配方法 要細想
+			return regprio[i];
+		}
+	}
+
+	return -1;	// 應該永遠不可能跑到這一步
+}
+
+int reg_alloc(int target_reg)
+{
+	int reg = test_and_set(target_reg);
+	if (reg == 0) {	// 代表尚未分配
+		int hostreg = alloc_host(target_reg);
+		*tb.codebuf++ = (unsigned char)hostreg;
 		env_to_reg(&tb, target_reg);
 		reg_to_env(&tb, target_reg);
+		return hostreg;
+	} else {	// 代表已經分配過了 要做的事情有: 直接回傳之前分配過的 host reg 就好了
+		*tb.codebuf++ = (unsigned char)reg;
+		return reg;
 	}
+
+	return -1;	// 應該永遠不可能跑到這一步
 }
 
 void init_tb(void)
@@ -84,7 +104,8 @@ void show_tb(void)
 {
 	unsigned char *ptr = &tb._prebuf[0];
 	do {
-		printf("把 R%d 從 env 拿到 host register\n", *ptr++);
+		printf("把 R%d 從 env 拿到 host R%d\n", *ptr, test_no_set(*ptr));
+		++ptr;
 	} while (*ptr != '\0');
 
 	printf("\n");
