@@ -1,4 +1,4 @@
-TARGET = dbt genop intermediate.h
+TARGET = genop intermediate.h reg
 CFLAGS = -g -Wall
 
 all:$(TARGET)
@@ -11,6 +11,9 @@ genop:genop.c
 
 intermediate.h:genop intermediate.op
 	./genop
+
+reg:reg.c
+	gcc $(CFLAGS) -o $@ $<
 
 clean:
 	rm -rf $(TARGET)
