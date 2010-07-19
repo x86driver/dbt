@@ -58,26 +58,13 @@ static inline int test_and_set(int regn)
 	return ret;
 }
 
-// 跟 test_and_set() 很像 只是不做 set, 用來 debug 用 (也就是可用來查表)
-static inline int test_no_set(int regn)
-{
-	return regmap[regn];
-}
-
 // 傳回值是分配到的 host register
 static inline int alloc_host(int target_reg)
 {
 //這裡要想一下 是否還需要 reghost 來判斷是否可以分配
 //因為 reg_alloc 已經判斷過一次了
-	int i;
-	for (i = target_reg; i < NUM_HOST_REG; ++i) {
-		if (reghost[i] == 0) {	// 找到空的 host reg 可以分配
-			reghost[i] = regprio[i];	// 絕妙的分配方法 要細想
-			return regprio[i];
-		}
-	}
-
-	return -1;	// 應該永遠不可能跑到這一步
+	reghost[target_reg] = regprio[target_reg];	// 絕妙的分配方法 要細想
+	return regprio[target_reg];
 }
 
 int reg_alloc(int target_reg)
@@ -108,8 +95,17 @@ void init_tb(void)
 void show_tb(void)
 {
 	unsigned char *ptr = &tb._prebuf[0];
+	printf("Before TB:\n");
 	do {
-		printf("把 R%d 從 env 拿到 host R%d\n", *ptr, test_no_set(*ptr));
+		printf("把 R%d 從 env 拿到 host R%d\n", *ptr, reghost[*ptr]);
+		++ptr;
+	} while (*ptr != '\0');
+
+	printf("\nIn TB:\n");
+
+	ptr = &tb._codebuf[0];
+	do {
+		printf("在 TB 用到 host R%d\n", *ptr);
 		++ptr;
 	} while (*ptr != '\0');
 
@@ -122,7 +118,10 @@ int main()
 
 	//預計的介面
 	reg_alloc(R0);
+	reg_alloc(R2);
+	reg_alloc(R0);
 	reg_alloc(R1);
+	reg_alloc(R2);
 
 	show_tb();
 	return 0;
