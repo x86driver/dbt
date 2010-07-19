@@ -5,6 +5,9 @@
  * NOTE:
  *	1. 似乎應該假設分配順序都是從頭開始 不會從中間跳著分配
  *	   否則 alloc_host 會出錯
+ * BUG:
+ *	1. show_tb() 永遠都是 1 的原因是 regmap 只紀錄 1 是 set
+ *	   所以也許要再多一個 array 紀錄對照表
  */
 
 #include <stdio.h>
@@ -64,6 +67,8 @@ static inline int test_no_set(int regn)
 // 傳回值是分配到的 host register
 static inline int alloc_host(int target_reg)
 {
+//這裡要想一下 是否還需要 reghost 來判斷是否可以分配
+//因為 reg_alloc 已經判斷過一次了
 	int i;
 	for (i = target_reg; i < NUM_HOST_REG; ++i) {
 		if (reghost[i] == 0) {	// 找到空的 host reg 可以分配
